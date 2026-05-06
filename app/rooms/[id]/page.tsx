@@ -3,11 +3,11 @@ import { getRoomById } from '../../lib/actions';
 import RoomDetailClient from './RoomDetailClient';
 import {
   ArrowLeft, CalendarDays, MapPin, Wifi, Monitor, Mic,
-  Projector,
+  Tv,
 } from 'lucide-react';
 
 const facilityIcons: Record<string, React.ReactNode> = {
-  Projector: <Projector size={16} />,
+  TV: <Tv size={16} />,
   Whiteboard: <Monitor size={16} />,
   'TV Screen': <Monitor size={16} />,
   Monitor: <Monitor size={16} />,

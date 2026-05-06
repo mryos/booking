@@ -2,11 +2,11 @@ import Link from 'next/link';
 import { getRooms, getTodayStats } from './lib/actions';
 import {
   CalendarDays, Users, Clock, BarChart3, MapPin,
-  Wifi, Monitor, Mic, ArrowRight, Projector,
+  Wifi, Monitor, Mic, ArrowRight, Tv,
 } from 'lucide-react';
 
 const facilityIcons: Record<string, React.ReactNode> = {
-  Projector: <Projector size={14} />,
+  TV: <Tv size={14} />,
   Whiteboard: <Monitor size={14} />,
   'TV Screen': <Monitor size={14} />,
   Monitor: <Monitor size={14} />,
