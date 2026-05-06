@@ -77,7 +77,7 @@ export const rooms: Room[] = [
     id: 'studio',
     name: 'Ruang Studio Office',
     shortName: 'Studio Office',
-    floor: 'Lantai 1',
+    floor: 'Lantai 3',
     description: 'Ruang studio multifungsi untuk recording, workshop, dan kegiatan kreatif.',
     facilities: ['Alat Musik Lengkap', 'Recording', 'AC', 'Wi-Fi', 'Lighting'],
     image: '/rooms/room-6.jpg',
