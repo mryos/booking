@@ -61,6 +61,24 @@ export default function MyBookingsPage() {
     cancelled: 'Dibatalkan',
   };
 
+  const shareInvitation = (b: any) => {
+    const room = getRoomName(b.roomId);
+    const dateStr = new Date(b.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    const text = `*Undangan Rapat - MeetingYuk!*\n\n📌 *Judul:* ${b.title}\n🏢 *Ruangan:* ${room}\n🗓️ *Tanggal:* ${dateStr}\n⏰ *Waktu:* ${b.startTime} - ${b.endTime} WIB\n👤 *Penyelenggara:* ${b.organizer}\n\n_Mohon hadir tepat waktu. Terima kasih!_`;
+    
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+  };
+
+  const copyToClipboard = (b: any) => {
+    const room = getRoomName(b.roomId);
+    const dateStr = new Date(b.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    const text = `Undangan Rapat - MeetingYuk!\n\nJudul: ${b.title}\nRuangan: ${room}\nTanggal: ${dateStr}\nWaktu: ${b.startTime} - ${b.endTime} WIB\nPenyelenggara: ${b.organizer}`;
+    
+    navigator.clipboard.writeText(text);
+    showToast('Undangan disalin ke clipboard', 'success');
+  };
+
   return (
     <main className="my-bookings fade-in">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -106,12 +124,19 @@ export default function MyBookingsPage() {
                 <div className="booking-card-title">{b.title}</div>
                 <div className="booking-card-meta">
                   <span><MapPin size={14} /> {getRoomName(b.roomId)}</span>
-                  <span><CalendarDays size={14} /> Tanggal {new Date(b.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                  <span><CalendarDays size={14} /> {new Date(b.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
                   <span><Clock size={14} /> {b.startTime} - {b.endTime}</span>
                 </div>
               </div>
-              <span className={`schedule-status status-${b.status}`}>{statusLabel[b.status]}</span>
-              <div className="booking-card-actions">
+              <div className="booking-card-actions" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span className={`schedule-status status-${b.status}`} style={{ margin: 0 }}>{statusLabel[b.status]}</span>
+                
+                {b.status !== 'cancelled' && (
+                  <button className="btn btn-outline btn-sm" onClick={() => shareInvitation(b)} title="Bagikan ke WhatsApp">
+                    <span style={{ color: '#25D366', fontWeight: 700 }}>WA</span>
+                  </button>
+                )}
+
                 {b.status === 'upcoming' && (
                   <button className="btn btn-ghost btn-sm" style={{ color: '#e74c3c' }} onClick={() => setConfirmAction({ type: 'cancel', id: b.id })} title="Batalkan">
                     <X size={16} />
