@@ -6,9 +6,20 @@ import { getBookings } from '../lib/actions';
 import { rooms } from '../lib/data';
 import { CalendarDays, Clock, Users, BarChart3, MapPin, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 
+function getWIBDate() {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return formatter.format(new Date());
+}
+
 export default function DashboardClient({ initialStats }: { initialStats: any }) {
   const [allBookings, setAllBookings] = useState<any[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const todayStr = getWIBDate();
+  const [selectedDate, setSelectedDate] = useState(todayStr);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
 
@@ -138,8 +149,13 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
             {Array.from({ length: daysInMonth }, (_, i) => {
               const day = i + 1;
               const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-              dateObj.setHours(0,0,0,0);
-              const dateStr = dateObj.toISOString().split('T')[0];
+              
+              // Safer date string construction to avoid timezone shifts
+              const y = currentMonth.getFullYear();
+              const m = (currentMonth.getMonth() + 1).toString().padStart(2, '0');
+              const d = day.toString().padStart(2, '0');
+              const dateStr = `${y}-${m}-${d}`;
+              
               const isSelected = dateStr === selectedDate;
               const isToday = dateStr === todayStr;
               const hasBooking = allBookings.some(b => b.date === dateStr && b.status !== 'cancelled');
@@ -150,7 +166,7 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
                   className={`calendar-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${hasBooking ? 'has-booking' : ''}`}
                   onClick={() => setSelectedDate(dateStr)}
                 >
-                  {day}
+                  <span className="day-number">{day}</span>
                   {hasBooking && <span className="dot" />}
                 </button>
               );

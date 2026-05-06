@@ -141,9 +141,20 @@ export async function deleteBooking(id: string) {
   }
 }
 
+// Helper untuk mendapatkan tanggal hari ini dalam format WIB (Asia/Jakarta)
+function getWIBDate() {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return formatter.format(new Date());
+}
+
 export async function getTodayStats() {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getWIBDate();
     const allBookings = await readBookings();
     
     const validBookings = allBookings.filter(b => b.status !== 'cancelled');

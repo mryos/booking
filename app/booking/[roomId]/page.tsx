@@ -8,13 +8,23 @@ import { timeSlots } from '../../lib/data';
 import Toast, { useToast } from '../../components/Toast';
 import { ArrowLeft, CalendarDays, Clock, User, FileText } from 'lucide-react';
 
+function getWIBDate() {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return formatter.format(new Date());
+}
+
 export default function BookingPage({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = use(params);
   const [room, setRoom] = useState<any>(null);
   const router = useRouter();
   const { toast, showToast, hideToast } = useToast();
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getWIBDate();
 
   const [form, setForm] = useState({
     date: todayStr,

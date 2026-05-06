@@ -630,15 +630,22 @@ input, select, textarea {
 .calendar-day {
   aspect-ratio: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-sm);
+  border-radius: 50%;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   transition: var(--transition);
   border: 2px solid transparent;
   color: var(--gray-700);
+  position: relative;
+  background: transparent;
+}
+
+.calendar-day .day-number {
+  z-index: 2;
 }
 
 .calendar-day:hover:not(.disabled):not(.empty) {
@@ -653,19 +660,19 @@ input, select, textarea {
 }
 
 .calendar-day.selected {
-  background: var(--blue);
-  color: white;
+  background: var(--blue) !important;
+  color: white !important;
   font-weight: 700;
+  box-shadow: 0 4px 10px rgba(53,158,217,0.4);
 }
 
-.calendar-day.has-booking::after {
-  content: '';
+.calendar-day.has-booking .dot {
   position: absolute;
-  bottom: 4px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
+  bottom: 6px;
+  width: 4px;
+  height: 4px;
   background: var(--orange);
+  border-radius: 50%;
 }
 
 .calendar-day.disabled { color: var(--gray-300); cursor: not-allowed; }
