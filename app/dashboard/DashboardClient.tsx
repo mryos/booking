@@ -4,116 +4,187 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getBookings } from '../lib/actions';
 import { rooms } from '../lib/data';
-import { CalendarDays, Clock, Users, BarChart3, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, Clock, Users, BarChart3, MapPin, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 
 export default function DashboardClient({ initialStats }: { initialStats: any }) {
   const [allBookings, setAllBookings] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [filterRoom, setFilterRoom] = useState('all');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getBookings().then(setAllBookings);
+    getBookings().then(data => {
+      setAllBookings(data);
+      setIsLoading(false);
+    });
   }, []);
 
-  const filtered = allBookings.filter((b) => {
-    if (filterRoom !== 'all' && b.roomId !== filterRoom) return false;
-    if (selectedDate && b.date !== selectedDate) return false;
-    return b.status !== 'cancelled';
-  }).sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const getRoom = (roomId: string) => rooms.find((r) => r.id === roomId);
+  
+  // Filter bookings for the selected date
+  const selectedDateBookings = allBookings.filter((b) => b.date === selectedDate && b.status !== 'cancelled')
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  const getRoomName = (roomId: string) => rooms.find((r) => r.id === roomId)?.shortName || roomId;
-  const getRoomColor = (roomId: string) => rooms.find((r) => r.id === roomId)?.color || '#359ed9';
+  // Filter all upcoming bookings for the next 30 days
+  const upcomingAgenda = allBookings.filter((b) => {
+    const bDate = new Date(b.date);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const thirtyDaysLater = new Date();
+    thirtyDaysLater.setDate(today.getDate() + 30);
+    return bDate >= today && bDate <= thirtyDaysLater && b.status !== 'cancelled';
+  }).sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
 
   const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   const dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
-  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const todayStr = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="dashboard-grid">
-      {/* Bookings List */}
-      <div>
-        <div className="filter-bar">
-          <select value={filterRoom} onChange={(e) => setFilterRoom(e.target.value)}>
-            <option value="all">Semua Ruang</option>
-            {rooms.map((r) => <option key={r.id} value={r.id}>{r.shortName}</option>)}
-          </select>
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-        </div>
-
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 16 }}>
-          Jadwal Tanggal {new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
-        </h3>
-
-        {filtered.length === 0 ? (
-          <div className="empty-state">
-            <CalendarDays size={48} />
-            <h3>Tidak ada booking</h3>
-            <p>Belum ada booking untuk tanggal dan filter yang dipilih.</p>
+    <div className="dashboard-layout fade-in">
+      {/* Left Column: Agenda & Selection */}
+      <div className="dashboard-main">
+        <section className="dashboard-section">
+          <div className="section-header">
+            <div className="section-title">
+              <CalendarDays size={20} />
+              <h2>Jadwal Rapat: {new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</h2>
+            </div>
           </div>
-        ) : (
-          <div className="schedule-list">
-            {filtered.map((b) => (
-              <div key={b.id} className="schedule-item">
-                <div style={{ width: 4, height: 40, borderRadius: 4, background: getRoomColor(b.roomId), flexShrink: 0 }} />
-                <div>
-                  <div className="schedule-time">{b.startTime} - {b.endTime}</div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div className="schedule-title">{b.title}</div>
-                  <div className="schedule-organizer">
-                    <MapPin size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> {getRoomName(b.roomId)} • {b.organizer}
+
+          {selectedDateBookings.length === 0 ? (
+            <div className="empty-state-mini">
+              <p>Tidak ada jadwal rapat untuk tanggal ini.</p>
+              <Link href="/" className="btn btn-primary btn-sm">Buat Booking</Link>
+            </div>
+          ) : (
+            <div className="agenda-grid">
+              {selectedDateBookings.map((b) => {
+                const room = getRoom(b.roomId);
+                return (
+                  <div key={b.id} className="agenda-card" style={{ borderLeft: `4px solid ${room?.color}` }}>
+                    <div className="agenda-card-time">
+                      <Clock size={14} />
+                      <span>{b.startTime} - {b.endTime}</span>
+                    </div>
+                    <div className="agenda-card-content">
+                      <h3>{b.title}</h3>
+                      <div className="agenda-card-meta">
+                        <span><Users size={12} /> {b.organizer}</span>
+                        <span><MapPin size={12} /> {room?.shortName}</span>
+                      </div>
+                    </div>
+                    <div className={`agenda-status status-${b.status}`}>
+                      {b.status === 'in-progress' ? 'Sedang Berlangsung' : 'Akan Datang'}
+                    </div>
                   </div>
-                </div>
-                <span className={`schedule-status status-${b.status}`}>
-                  {b.status === 'upcoming' ? 'Akan Datang' : b.status === 'in-progress' ? 'Berlangsung' : b.status === 'completed' ? 'Selesai' : 'Dibatalkan'}
-                </span>
-              </div>
-            ))}
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="dashboard-section">
+          <div className="section-header">
+            <div className="section-title">
+              <BarChart3 size={20} />
+              <h2>Agenda 30 Hari Ke Depan</h2>
+            </div>
           </div>
-        )}
+          
+          <div className="upcoming-timeline">
+            {upcomingAgenda.length === 0 ? (
+              <p className="text-muted">Belum ada agenda rapat dalam 30 hari ke depan.</p>
+            ) : (
+              upcomingAgenda.slice(0, 10).map((b) => {
+                const room = getRoom(b.roomId);
+                return (
+                  <div key={b.id} className="timeline-item">
+                    <div className="timeline-date">
+                      <span className="day">{new Date(b.date + 'T00:00:00').getDate()}</span>
+                      <span className="month">{monthNames[new Date(b.date).getMonth()].substring(0,3)}</span>
+                    </div>
+                    <div className="timeline-content">
+                      <div className="timeline-title">{b.title}</div>
+                      <div className="timeline-details">
+                        <span style={{ color: room?.color, fontWeight: 600 }}>{room?.shortName}</span> • {b.startTime}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            {upcomingAgenda.length > 10 && (
+              <div className="timeline-more">
+                <p>+ {upcomingAgenda.length - 10} agenda lainnya...</p>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
 
-      {/* Mini Calendar */}
-      <div style={{ background: 'var(--gray-50)', padding: 24, borderRadius: 'var(--radius-lg)', border: '1px solid var(--gray-200)', height: 'fit-content' }}>
-        <div className="calendar-header">
+      {/* Right Column: Mini Calendar & Stats */}
+      <div className="dashboard-sidebar">
+        <div className="calendar-widget">
           <div className="calendar-nav">
             <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}><ChevronLeft size={18} /></button>
             <span className="calendar-month">{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</span>
             <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}><ChevronRight size={18} /></button>
           </div>
-        </div>
-        <div className="calendar-grid">
-          {dayLabels.map((d) => <div key={d} className="calendar-day-label">{d}</div>)}
-          {Array.from({ length: firstDay }, (_, i) => <div key={`e-${i}`} className="calendar-day empty" />)}
-          {Array.from({ length: daysInMonth }, (_, i) => {
-            const day = i + 1;
-            const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-            date.setHours(0, 0, 0, 0);
-            const dateStr = date.toISOString().split('T')[0];
-            const isToday = date.getTime() === today.getTime();
-            const isSelected = dateStr === selectedDate;
+          <div className="calendar-grid">
+            {dayLabels.map((d) => <div key={d} className="calendar-day-label">{d}</div>)}
+            {Array.from({ length: firstDay }, (_, i) => <div key={`e-${i}`} className="calendar-day empty" />)}
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+              dateObj.setHours(0,0,0,0);
+              const dateStr = dateObj.toISOString().split('T')[0];
+              const isSelected = dateStr === selectedDate;
+              const isToday = dateStr === todayStr;
+              const hasBooking = allBookings.some(b => b.date === dateStr && b.status !== 'cancelled');
 
-            return (
-              <button key={day} className={`calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
-                onClick={() => setSelectedDate(dateStr)}>
-                {day}
-              </button>
-            );
-          })}
+              return (
+                <button 
+                  key={day} 
+                  className={`calendar-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${hasBooking ? 'has-booking' : ''}`}
+                  onClick={() => setSelectedDate(dateStr)}
+                >
+                  {day}
+                  {hasBooking && <span className="dot" />}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Room Legend */}
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--gray-200)' }}>
-          <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--gray-700)', marginBottom: 10 }}>Ruang Meeting</p>
-          {rooms.map((r) => (
-            <Link key={r.id} href={`/rooms/${r.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: '0.85rem', color: 'var(--gray-600)' }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
-              {r.shortName}
-            </Link>
-          ))}
+        <div className="room-status-widget">
+          <h3>Status Ruangan Saat Ini</h3>
+          <div className="room-status-list">
+            {rooms.map(room => {
+              const now = new Date();
+              const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+              const isBusy = allBookings.some(b => 
+                b.roomId === room.id && 
+                b.date === todayStr && 
+                timeStr >= b.startTime && 
+                timeStr <= b.endTime &&
+                b.status !== 'cancelled'
+              );
+
+              return (
+                <div key={room.id} className="room-status-item">
+                  <div className="room-color-dot" style={{ background: room.color }} />
+                  <div className="room-info">
+                    <div className="room-name">{room.shortName}</div>
+                    <div className={`room-tag ${isBusy ? 'busy' : 'available'}`}>
+                      {isBusy ? 'Terpakai' : 'Tersedia'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
