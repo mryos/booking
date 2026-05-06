@@ -11,6 +11,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
+// FUNGSI STANDAR WIB (Asia/Jakarta)
 function getWIBDate() {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Jakarta',
@@ -21,12 +22,22 @@ function getWIBDate() {
   return formatter.format(new Date());
 }
 
+function getWIBTime() {
+  const formatter = new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  return formatter.format(new Date()).replace('.', ':');
+}
+
 export default function DashboardClient({ initialStats }: { initialStats: any }) {
   const [allBookings, setAllBookings] = useState<any[]>([]);
   const todayStr = getWIBDate();
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'agenda' | 'timeline'>('timeline');
+  const [viewMode, setViewMode] = useState<'timeline' | 'agenda'>('timeline');
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchLatestData = useCallback(async () => {
@@ -37,48 +48,33 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
 
   useEffect(() => {
     fetchLatestData();
-
-    // SETUP SUPABASE REALTIME
     if (supabase) {
-      const channel = supabase
-        .channel('schema-db-changes')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'bookings' },
-          () => {
-            console.log('Real-time update received!');
-            fetchLatestData();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
+      const channel = supabase.channel('schema-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+          fetchLatestData();
+        }).subscribe();
+      return () => { supabase.removeChannel(channel); };
     }
   }, [fetchLatestData]);
 
   const getRoom = (roomId: string) => rooms.find((r) => r.id === roomId);
   const selectedDateBookings = allBookings.filter((b) => b.date === selectedDate && b.status !== 'cancelled');
-
   const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   const dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
 
-  // TIMELINE LOGIC
-  const workingHours = timeSlots.filter((_, i) => i % 2 === 0); // Show every hour for cleaner timeline
+  const workingHours = timeSlots.filter((_, i) => i % 2 === 0);
 
   return (
     <div className="dashboard-layout fade-in">
       <div className="dashboard-main">
-        {/* View Switcher */}
-        <div className="view-switcher">
+        <div className="view-switcher" style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
           <button className={viewMode === 'timeline' ? 'active' : ''} onClick={() => setViewMode('timeline')}>
-            <LayoutGrid size={16} /> Timeline Visual
+            <LayoutGrid size={18} /> Timeline Visual
           </button>
           <button className={viewMode === 'agenda' ? 'active' : ''} onClick={() => setViewMode('agenda')}>
-            <List size={16} /> Daftar Agenda
+            <List size={18} /> Daftar Agenda
           </button>
         </div>
 
@@ -90,8 +86,40 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
             </div>
           </div>
 
-          {viewMode === 'agenda' ? (
-            /* AGENDA VIEW */
+          {viewMode === 'timeline' ? (
+            <div className="timeline-container">
+              <div className="timeline-header">
+                <div className="room-col-header">Ruangan</div>
+                <div className="time-cols">
+                  {workingHours.map(hour => <div key={hour} className="time-label">{hour}</div>)}
+                </div>
+              </div>
+              <div className="timeline-body">
+                {rooms.map(room => (
+                  <div key={room.id} className="timeline-row">
+                    <div className="room-name-col" style={{ borderLeft: `4px solid ${room.color}` }}>{room.shortName}</div>
+                    <div className="room-track">
+                      {allBookings.filter(b => b.roomId === room.id && b.date === selectedDate && b.status !== 'cancelled').map(b => {
+                        const startIdx = timeSlots.indexOf(b.startTime);
+                        const endIdx = timeSlots.indexOf(b.endTime);
+                        const duration = endIdx - startIdx;
+                        const left = (startIdx / (timeSlots.length - 1)) * 100;
+                        const width = (duration / (timeSlots.length - 1)) * 100;
+                        return (
+                          <div key={b.id} className="booking-block" 
+                               style={{ left: `${left}%`, width: `${width}%`, background: room.color }}
+                               title={`${b.title} (${b.startTime} - ${b.endTime})`}>
+                            <span className="block-title">{b.title}</span>
+                          </div>
+                        );
+                      })}
+                      {workingHours.map(h => <div key={h} className="grid-line" />)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
             selectedDateBookings.length === 0 ? (
               <div className="empty-state-mini"><p>Tidak ada rapat untuk tanggal ini.</p></div>
             ) : (
@@ -110,43 +138,6 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
                 })}
               </div>
             )
-          ) : (
-            /* TIMELINE VIEW (GANTT CHART) */
-            <div className="timeline-container">
-              <div className="timeline-header">
-                <div className="room-col-header">Ruangan</div>
-                <div className="time-cols">
-                  {workingHours.map(hour => <div key={hour} className="time-label">{hour}</div>)}
-                </div>
-              </div>
-              <div className="timeline-body">
-                {rooms.map(room => (
-                  <div key={room.id} className="timeline-row">
-                    <div className="room-name-col" style={{ borderLeft: `4px solid ${room.color}` }}>{room.shortName}</div>
-                    <div className="room-track">
-                      {/* Booking Blocks */}
-                      {allBookings.filter(b => b.roomId === room.id && b.date === selectedDate && b.status !== 'cancelled').map(b => {
-                        const startIdx = timeSlots.indexOf(b.startTime);
-                        const endIdx = timeSlots.indexOf(b.endTime);
-                        const duration = endIdx - startIdx;
-                        const left = (startIdx / (timeSlots.length - 1)) * 100;
-                        const width = (duration / (timeSlots.length - 1)) * 100;
-
-                        return (
-                          <div key={b.id} className="booking-block" 
-                               style={{ left: `${left}%`, width: `${width}%`, background: room.color }}
-                               title={`${b.title} (${b.startTime} - ${b.endTime})`}>
-                            <span className="block-title">{b.title}</span>
-                          </div>
-                        );
-                      })}
-                      {/* Grid Lines */}
-                      {workingHours.map(h => <div key={h} className="grid-line" />)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           )}
         </section>
 
@@ -156,16 +147,15 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
           </div>
           <div className="upcoming-timeline">
             {allBookings.filter(b => {
-              const bDate = new Date(b.date);
-              const today = new Date(); today.setHours(0,0,0,0);
-              return bDate >= today && b.status !== 'cancelled';
-            }).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 5).map(b => {
+              const bDate = b.date;
+              return bDate >= todayStr && b.status !== 'cancelled';
+            }).sort((a,b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)).slice(0, 5).map(b => {
               const room = getRoom(b.roomId);
               return (
                 <div key={b.id} className="timeline-item">
                   <div className="timeline-date">
-                    <span className="day">{new Date(b.date + 'T00:00:00').getDate()}</span>
-                    <span className="month">{monthNames[new Date(b.date).getMonth()].substring(0,3)}</span>
+                    <span className="day">{b.date.split('-')[2]}</span>
+                    <span className="month">{monthNames[parseInt(b.date.split('-')[1]) - 1].substring(0,3)}</span>
                   </div>
                   <div className="timeline-content">
                     <div className="timeline-title">{b.title}</div>
@@ -203,11 +193,10 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
         </div>
 
         <div className="room-status-widget">
-          <h3>Status Sekarang</h3>
+          <h3>Status Sekarang (WIB)</h3>
           <div className="room-status-list">
             {rooms.map(room => {
-              const now = new Date();
-              const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+              const timeStr = getWIBTime();
               const isBusy = allBookings.some(b => b.roomId === room.id && b.date === todayStr && timeStr >= b.startTime && timeStr <= b.endTime && b.status !== 'cancelled');
               return (
                 <div key={room.id} className="room-status-item">

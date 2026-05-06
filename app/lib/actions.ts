@@ -1,21 +1,24 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { rooms } from './data';
-import { readBookings, writeBookings } from './storage';
+import { 
+  getRooms as fetchRooms, 
+  getRoomById as fetchRoom, 
+  readBookings, 
+  writeBookings,
+  dbInsertBooking,
+  dbUpdateStatus,
+  dbDeleteBooking
+} from './storage';
 
-const MASTER_PIN = '1234'; // PIN Default, silakan ganti sesuai kebutuhan
-
-// GET ROOMS
 export async function getRooms() {
-  return rooms;
+  return await fetchRooms();
 }
 
 export async function getRoomById(id: string) {
-  return rooms.find(r => r.id === id);
+  return await fetchRoom(id);
 }
 
-// GET BOOKINGS
 export async function getBookings() {
   try {
     return await readBookings();
@@ -24,7 +27,121 @@ export async function getBookings() {
   }
 }
 
-// STATS
+export async function getBookingsByRoomAndDate(roomId: string, date: string) {
+  try {
+    const bookings = await readBookings();
+    return bookings.filter((b) => 
+      b.roomId === roomId && 
+      b.date === date && 
+      b.status !== 'cancelled'
+    ).sort((a, b) => a.startTime.localeCompare(b.startTime));
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function isTimeSlotAvailable(
+  roomId: string,
+  date: string,
+  startTime: string,
+  endTime: string
+) {
+  try {
+    const bookings = await readBookings();
+    const existingBookings = bookings.filter((b) => 
+      b.roomId === roomId && 
+      b.date === date && 
+      b.status !== 'cancelled'
+    );
+
+    return !existingBookings.some((b) => {
+      return startTime < b.endTime && endTime > b.startTime;
+    });
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function createBooking(data: {
+  roomId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  title: string;
+  organizer: string;
+  description?: string;
+}) {
+  try {
+    const available = await isTimeSlotAvailable(data.roomId, data.date, data.startTime, data.endTime);
+    if (!available) {
+      throw new Error('Slot waktu tidak tersedia');
+    }
+
+    const newBooking = {
+      id: Math.random().toString(36).substr(2, 9),
+      ...data,
+      status: 'upcoming',
+      createdAt: new Date().toISOString(),
+    };
+
+    // Use DB if enabled, else JSON
+    try {
+      await dbInsertBooking(newBooking);
+    } catch {
+      const bookings = await readBookings();
+      bookings.push(newBooking);
+      await writeBookings(bookings);
+    }
+
+    revalidatePath('/');
+    revalidatePath('/dashboard');
+    revalidatePath('/my-bookings');
+    revalidatePath(`/rooms/${data.roomId}`);
+
+    return { success: true, booking: newBooking };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function cancelBooking(id: string) {
+  try {
+    try {
+      await dbUpdateStatus(id, 'cancelled');
+    } catch {
+      const bookings = await readBookings();
+      const index = bookings.findIndex(b => b.id === id);
+      if (index !== -1) {
+        bookings[index].status = 'cancelled';
+        await writeBookings(bookings);
+      }
+    }
+    revalidatePath('/my-bookings');
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+export async function deleteBooking(id: string) {
+  try {
+    try {
+      await dbDeleteBooking(id);
+    } catch {
+      const bookings = await readBookings();
+      const filtered = bookings.filter(b => b.id !== id);
+      await writeBookings(filtered);
+    }
+    revalidatePath('/my-bookings');
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+// Helper untuk mendapatkan tanggal hari ini dalam format WIB (Asia/Jakarta)
 function getWIBDate() {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Jakarta',
@@ -52,98 +169,4 @@ export async function getTodayStats() {
   } catch (error) {
     return { todayTotal: 0, activeNow: 0, upcoming: 0, totalAll: 0 };
   }
-}
-
-// CREATE BOOKING
-export async function createBooking(data: any) {
-  try {
-    // VALIDASI PIN
-    if (data.pin !== MASTER_PIN) {
-      throw new Error('PIN Admin salah! Gunakan PIN kantor yang benar.');
-    }
-
-    const bookings = await readBookings();
-    
-    // Check for double booking
-    const isConflict = bookings.some(b => 
-      b.roomId === data.roomId && 
-      b.date === data.date && 
-      b.status !== 'cancelled' &&
-      ((data.startTime >= b.startTime && data.startTime < b.endTime) ||
-       (data.endTime > b.startTime && data.endTime <= b.endTime) ||
-       (data.startTime <= b.startTime && data.endTime >= b.endTime))
-    );
-
-    if (isConflict) {
-      throw new Error('Ruangan sudah dipesan pada jam tersebut.');
-    }
-
-    const { pin, ...bookingData } = data; // Jangan simpan PIN ke database
-    const newBooking = {
-      id: Math.random().toString(36).substring(2, 9),
-      ...bookingData,
-      status: 'upcoming',
-      createdAt: new Date().toISOString(),
-    };
-
-    const updatedBookings = [newBooking, ...bookings];
-    await writeBookings(updatedBookings);
-    
-    revalidatePath('/');
-    revalidatePath('/dashboard');
-    revalidatePath('/my-bookings');
-    
-    return { success: true, booking: newBooking };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-// CANCEL / DELETE WITH PIN
-export async function cancelBooking(id: string, pin: string) {
-  try {
-    if (pin !== MASTER_PIN) throw new Error('PIN Admin salah!');
-
-    const bookings = await readBookings();
-    const index = bookings.findIndex(b => b.id === id);
-    if (index !== -1) {
-      bookings[index].status = 'cancelled';
-      await writeBookings(bookings);
-    }
-    
-    revalidatePath('/dashboard');
-    revalidatePath('/my-bookings');
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-export async function deleteBooking(id: string, pin: string) {
-  try {
-    if (pin !== MASTER_PIN) throw new Error('PIN Admin salah!');
-
-    const bookings = await readBookings();
-    const updatedBookings = bookings.filter(b => b.id !== id);
-    await writeBookings(updatedBookings);
-    
-    revalidatePath('/dashboard');
-    revalidatePath('/my-bookings');
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-// HELPER
-export async function isTimeSlotAvailable(roomId: string, date: string, startTime: string, endTime: string) {
-  const bookings = await readBookings();
-  return !bookings.some(b => 
-    b.roomId === roomId && 
-    b.date === date && 
-    b.status !== 'cancelled' &&
-    ((startTime >= b.startTime && startTime < b.endTime) ||
-     (endTime > b.startTime && endTime <= b.endTime) ||
-     (startTime <= b.startTime && endTime >= b.endTime))
-  );
 }
