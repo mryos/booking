@@ -163,7 +163,7 @@ export default function MyBookingsPage() {
             <p>{confirmAction.type === 'cancel' ? 'Booking yang dibatalkan tidak dapat dikembalikan.' : 'Booking akan dihapus secara permanen.'}</p>
             <div className="modal-actions">
               <button className="btn btn-outline btn-sm" onClick={() => setConfirmAction(null)}>Tidak</button>
-              <button className="btn btn-danger btn-sm" onClick={() => confirmAction.type === 'cancel' ? handleCancel(confirmAction.id) : handleDelete(confirmAction.id)}>
+              <button className="btn btn-danger btn-sm" onClick={handleConfirm}>
                 {confirmAction.type === 'cancel' ? 'Ya, Batalkan' : 'Ya, Hapus'}
               </button>
             </div>

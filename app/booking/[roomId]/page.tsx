@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getRoomById, createBooking, isTimeSlotAvailable } from '../../lib/actions';
 import { timeSlots } from '../../lib/data';
 import Toast, { useToast } from '../../components/Toast';
-import { ArrowLeft, CalendarDays, Clock, User, FileText } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Clock, User, FileText, Lock } from 'lucide-react';
 
 function getWIBDate() {
   const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -33,14 +33,16 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
     title: '',
     organizer: '',
     description: '',
+    pin: '',
   });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     getRoomById(roomId).then(setRoom);
-  });
+  }, [roomId]);
 
   if (!room) {
     return (
@@ -58,6 +60,7 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
     if (!form.date) errs.date = 'Tanggal wajib dipilih';
     if (form.startTime >= form.endTime) errs.endTime = 'Waktu selesai harus setelah waktu mulai';
     if (form.date < todayStr) errs.date = 'Tidak bisa booking di masa lalu';
+    if (!form.pin || form.pin.length !== 4) errs.pin = 'PIN 4-digit wajib diisi';
 
     if (Object.keys(errs).length === 0) {
       const available = await isTimeSlotAvailable(room.id, form.date, form.startTime, form.endTime);
@@ -80,12 +83,7 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
     setIsSubmitting(true);
     const result = await createBooking({
       roomId: room.id,
-      date: form.date,
-      startTime: form.startTime,
-      endTime: form.endTime,
-      title: form.title,
-      organizer: form.organizer,
-      description: form.description,
+      ...form
     });
 
     setIsSubmitting(false);
@@ -147,6 +145,13 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
           <textarea className="form-input form-textarea" placeholder="Detail tambahan tentang rapat..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </div>
 
+        <div className="form-group" style={{ borderTop: '1px solid var(--gray-100)', paddingTop: 20, marginTop: 20 }}>
+          <label className="form-label"><Lock size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />PIN Admin *</label>
+          <input className="form-input" type="password" placeholder="4 digit PIN kantor" maxLength={4} value={form.pin} onChange={(e) => setForm({ ...form, pin: e.target.value })} />
+          {errors.pin && <p className="form-error">{errors.pin}</p>}
+          <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: 4 }}>Gunakan PIN kantor untuk memverifikasi booking Anda.</p>
+        </div>
+
         <div className="form-actions">
           <button className="btn btn-primary" style={{ background: room.color }} onClick={handleSubmit} disabled={isSubmitting}>
             <CalendarDays size={18} /> {isSubmitting ? 'Memproses...' : 'Buat Booking'}
@@ -163,7 +168,7 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
             <p>
               <strong>{form.title}</strong><br />
               {room.name}<br />
-              Tanggal {new Date(form.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}<br />
+              Tanggal {new Date(form.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}<br />
               {form.startTime} - {form.endTime}<br />
               Penyelenggara: {form.organizer}
             </p>
