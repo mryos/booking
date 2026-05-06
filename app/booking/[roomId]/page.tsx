@@ -58,14 +58,14 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
     if (!form.date) errs.date = 'Tanggal wajib dipilih';
     if (form.startTime >= form.endTime) errs.endTime = 'Waktu selesai harus setelah waktu mulai';
     if (form.date < todayStr) errs.date = 'Tidak bisa booking di masa lalu';
-    
+
     if (Object.keys(errs).length === 0) {
       const available = await isTimeSlotAvailable(room.id, form.date, form.startTime, form.endTime);
       if (!available) {
         errs.startTime = 'Slot waktu ini sudah terpakai';
       }
     }
-    
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -87,10 +87,10 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
       organizer: form.organizer,
       description: form.description,
     });
-    
+
     setIsSubmitting(false);
     setShowConfirm(false);
-    
+
     if (result.success) {
       showToast('Booking berhasil dibuat!', 'success');
       setTimeout(() => router.push('/my-bookings'), 1500);
