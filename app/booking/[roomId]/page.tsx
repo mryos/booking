@@ -5,18 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getRoomById, createBooking, isTimeSlotAvailable } from '../../lib/actions';
 import { timeSlots } from '../../lib/data';
+import { getWIBDate, formatIndonesianDate } from '../../lib/utils';
 import Toast, { useToast } from '../../components/Toast';
 import { ArrowLeft, CalendarDays, Clock, User, FileText } from 'lucide-react';
 
-function getWIBDate() {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Jakarta',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(new Date());
-}
+// getWIBDate moved to utils.ts
 
 export default function BookingPage({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = use(params);
@@ -163,7 +156,7 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
             <p>
               <strong>{form.title}</strong><br />
               {room.name}<br />
-              Tanggal {new Date(form.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}<br />
+              Tanggal {formatIndonesianDate(form.date)}<br />
               {form.startTime} - {form.endTime}<br />
               Penyelenggara: {form.organizer}
             </p>

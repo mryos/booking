@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { getBookings } from '../lib/actions';
 import { rooms, timeSlots } from '../lib/data';
+import { getWIBDate, getWIBTime, getWIBNow, formatIndonesianDate, INDONESIAN_MONTHS, INDONESIAN_DAYS } from '../lib/utils';
 import { createClient } from '@supabase/supabase-js';
 import { CalendarDays, Clock, Users, BarChart3, MapPin, ChevronLeft, ChevronRight, List, LayoutGrid } from 'lucide-react';
 
@@ -11,32 +12,13 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
-// FUNGSI STANDAR WIB (Asia/Jakarta)
-function getWIBDate() {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Jakarta',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(new Date());
-}
-
-function getWIBTime() {
-  const formatter = new Intl.DateTimeFormat('id-ID', {
-    timeZone: 'Asia/Jakarta',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
-  return formatter.format(new Date()).replace('.', ':');
-}
+// WIB functions moved to utils.ts
 
 export default function DashboardClient({ initialStats }: { initialStats: any }) {
   const [allBookings, setAllBookings] = useState<any[]>([]);
   const todayStr = getWIBDate();
   const [selectedDate, setSelectedDate] = useState(todayStr);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(getWIBNow());
   const [viewMode, setViewMode] = useState<'timeline' | 'agenda'>('timeline');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -59,8 +41,8 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
 
   const getRoom = (roomId: string) => rooms.find((r) => r.id === roomId);
   const selectedDateBookings = allBookings.filter((b) => b.date === selectedDate && b.status !== 'cancelled');
-  const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-  const dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const monthNames = INDONESIAN_MONTHS;
+  const dayLabels = INDONESIAN_DAYS;
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
 
@@ -82,7 +64,7 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
           <div className="section-header">
             <div className="section-title">
               <CalendarDays size={20} />
-              <h2>Jadwal: {new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</h2>
+              <h2>Jadwal: {formatIndonesianDate(selectedDate)}</h2>
             </div>
           </div>
 

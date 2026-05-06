@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { rooms } from '../lib/data';
 import { getBookings, cancelBooking, deleteBooking } from '../lib/actions';
+import { formatIndonesianDate } from '../lib/utils';
 import Toast, { useToast } from '../components/Toast';
 import { CalendarDays, Clock, MapPin, X, Trash2, Plus } from 'lucide-react';
 
@@ -63,7 +64,7 @@ export default function MyBookingsPage() {
 
   const shareInvitation = (b: any) => {
     const room = getRoomName(b.roomId);
-    const dateStr = new Date(b.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    const dateStr = formatIndonesianDate(b.date);
     const text = `*Undangan Rapat - MeetingYuk!*\n\n📌 *Judul:* ${b.title}\n🏢 *Ruangan:* ${room}\n🗓️ *Tanggal:* ${dateStr}\n⏰ *Waktu:* ${b.startTime} - ${b.endTime} WIB\n👤 *Penyelenggara:* ${b.organizer}\n\n_Mohon hadir tepat waktu. Terima kasih!_`;
     
     const encodedText = encodeURIComponent(text);
@@ -72,7 +73,7 @@ export default function MyBookingsPage() {
 
   const copyToClipboard = (b: any) => {
     const room = getRoomName(b.roomId);
-    const dateStr = new Date(b.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    const dateStr = formatIndonesianDate(b.date);
     const text = `Undangan Rapat - MeetingYuk!\n\nJudul: ${b.title}\nRuangan: ${room}\nTanggal: ${dateStr}\nWaktu: ${b.startTime} - ${b.endTime} WIB\nPenyelenggara: ${b.organizer}`;
     
     navigator.clipboard.writeText(text);
@@ -124,7 +125,7 @@ export default function MyBookingsPage() {
                 <div className="booking-card-title">{b.title}</div>
                 <div className="booking-card-meta">
                   <span><MapPin size={14} /> {getRoomName(b.roomId)}</span>
-                  <span><CalendarDays size={14} /> {new Date(b.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                  <span><CalendarDays size={14} /> {formatIndonesianDate(b.date)}</span>
                   <span><Clock size={14} /> {b.startTime} - {b.endTime}</span>
                 </div>
               </div>

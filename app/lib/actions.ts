@@ -10,6 +10,7 @@ import {
   dbUpdateStatus,
   dbDeleteBooking
 } from './storage';
+import { getWIBDate } from './utils';
 
 export async function getRooms() {
   return await fetchRooms();
@@ -141,16 +142,7 @@ export async function deleteBooking(id: string) {
   }
 }
 
-// Helper untuk mendapatkan tanggal hari ini dalam format WIB (Asia/Jakarta)
-function getWIBDate() {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Jakarta',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(new Date());
-}
+// getWIBDate moved to utils.ts
 
 export async function getTodayStats() {
   try {

@@ -7,15 +7,16 @@ import type { Booking, Room } from '../../lib/data';
 import {
   CalendarDays, ChevronLeft, ChevronRight,
 } from 'lucide-react';
+import { getWIBDate, getWIBNow, formatIndonesianDate, INDONESIAN_MONTHS, INDONESIAN_DAYS } from '../../lib/utils';
 
 export default function RoomDetailClient({ room }: { room: any }) {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(getWIBNow());
   const [bookings, setBookings] = useState<any[]>([]);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(getWIBNow());
 
   useEffect(() => {
     const fetchBookings = async () => {
-      const dateStr = selectedDate.toISOString().split('T')[0];
+      const dateStr = selectedDate.getFullYear() + '-' + String(selectedDate.getMonth() + 1).padStart(2, '0') + '-' + String(selectedDate.getDate()).padStart(2, '0');
       const data = await getBookingsByRoomAndDate(room.id, dateStr);
       setBookings(data);
     };
@@ -24,11 +25,11 @@ export default function RoomDetailClient({ room }: { room: any }) {
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
-  const today = new Date();
+  const today = getWIBNow();
   today.setHours(0, 0, 0, 0);
 
-  const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-  const dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const monthNames = INDONESIAN_MONTHS;
+  const dayLabels = INDONESIAN_DAYS;
 
   const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
@@ -59,7 +60,9 @@ export default function RoomDetailClient({ room }: { room: any }) {
               const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
               date.setHours(0, 0, 0, 0);
               const isToday = date.getTime() === today.getTime();
-              const isSelected = date.toISOString().split('T')[0] === selectedDate.toISOString().split('T')[0];
+              const dateStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+              const selectedDateStr = selectedDate.getFullYear() + '-' + String(selectedDate.getMonth() + 1).padStart(2, '0') + '-' + String(selectedDate.getDate()).padStart(2, '0');
+              const isSelected = dateStr === selectedDateStr;
               const isPast = date < today;
 
               return (
@@ -79,7 +82,7 @@ export default function RoomDetailClient({ room }: { room: any }) {
         {/* Schedule */}
         <div>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 16, color: 'var(--gray-800)' }}>
-            Jadwal Tanggal {selectedDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+            Jadwal Tanggal {formatIndonesianDate(selectedDate.getFullYear() + '-' + String(selectedDate.getMonth() + 1).padStart(2, '0') + '-' + String(selectedDate.getDate()).padStart(2, '0'))}
           </h3>
           {bookings.length === 0 ? (
             <div className="empty-state" style={{ padding: 40 }}>
