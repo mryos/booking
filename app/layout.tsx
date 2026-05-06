@@ -22,7 +22,7 @@ export default function RootLayout({
         <footer className="footer">
           <div className="footer-inner">
             <p className="footer-text">
-              &copy; 2026 <span>Vendor Management</span>
+              &copy; 2026 <span>VMS</span>
             </p>
           </div>
         </footer>
