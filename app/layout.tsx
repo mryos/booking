@@ -16,7 +16,16 @@ export default function RootLayout({
     <html lang="id">
       <body>
         <Navbar />
-        {children}
+        <main style={{ minHeight: 'calc(100vh - 64px - 100px)' }}>
+          {children}
+        </main>
+        <footer className="footer">
+          <div className="footer-inner">
+            <p className="footer-text">
+              &copy; 2026 <span>Vendor Management</span>
+            </p>
+          </div>
+        </footer>
       </body>
     </html>
   );
