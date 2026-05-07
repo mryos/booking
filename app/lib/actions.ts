@@ -10,7 +10,7 @@ import {
   dbUpdateStatus,
   dbDeleteBooking
 } from './storage';
-import { getWIBDate } from './utils';
+import { getWIBDate, getWIBTime } from './utils';
 
 export async function getRooms() {
   return await fetchRooms();
@@ -147,15 +147,25 @@ export async function deleteBooking(id: string) {
 export async function getTodayStats() {
   try {
     const today = getWIBDate();
+    const nowTime = getWIBTime();
     const allBookings = await readBookings();
     
     const validBookings = allBookings.filter(b => b.status !== 'cancelled');
     const todayBookings = validBookings.filter(b => b.date === today);
 
+    // Calculate activeNow and upcoming based on actual time
+    const activeNowCount = todayBookings.filter(b => 
+      nowTime >= b.startTime && nowTime <= b.endTime
+    ).length;
+
+    const upcomingCount = todayBookings.filter(b => 
+      b.startTime > nowTime
+    ).length;
+
     return {
       todayTotal: todayBookings.length,
-      activeNow: todayBookings.filter(b => b.status === 'in-progress').length,
-      upcoming: todayBookings.filter(b => b.status === 'upcoming').length,
+      activeNow: activeNowCount,
+      upcoming: upcomingCount,
       totalAll: validBookings.length,
     };
   } catch (error) {
