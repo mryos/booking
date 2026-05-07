@@ -147,9 +147,9 @@ export async function createBooking(data: {
       await writeBookings(bookings);
     }
 
-    // Trigger WA Notification to OB Team
+    // Trigger WA Notification to OB Team (hanya untuk ruang selain studio)
     const room = await fetchRoom(data.roomId);
-    if (room) {
+    if (room && room.id !== 'studio') {
       // Kita panggil tanpa await agar tidak menghambat response user (background task)
       notifyOBTeam(newBooking, room);
     }

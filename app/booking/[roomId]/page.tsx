@@ -198,25 +198,27 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
             <h2>Booking Berhasil!</h2>
             <p>Rapat <strong>{lastBooking.title}</strong> telah dijadwalkan.</p>
             
-            <div style={{ 
-              background: '#f8f9fa', 
-              padding: '16px', 
-              borderRadius: '8px', 
-              marginBottom: '20px',
-              border: '1px dashed #ddd',
-              fontSize: '14px',
-              textAlign: 'left'
-            }}>
-              <p style={{ margin: '0 0 8px 0' }}><strong>Ingin pesan konsumsi?</strong></p>
-              <p style={{ margin: 0, color: '#666' }}>Kirim notifikasi otomatis ke Tim OB GA via WhatsApp.</p>
-            </div>
+            {room.id !== 'studio' && (
+              <>
+                <div style={{ 
+                  background: '#f8f9fa', 
+                  padding: '16px', 
+                  borderRadius: '8px', 
+                  marginBottom: '20px',
+                  border: '1px dashed #ddd',
+                  fontSize: '14px',
+                  textAlign: 'left'
+                }}>
+                  <p style={{ margin: '0 0 8px 0' }}><strong>Ingin pesan konsumsi?</strong></p>
+                  <p style={{ margin: 0, color: '#666' }}>Kirim notifikasi otomatis ke Tim OB GA via WhatsApp.</p>
+                </div>
 
-            <div className="modal-actions" style={{ flexDirection: 'column', gap: '10px' }}>
-              <button 
-                className="btn btn-primary" 
-                style={{ width: '100%', background: '#25D366', borderColor: '#25D366' }}
-                onClick={() => {
-                  const text = `*Notifikasi Booking Ruang Meeting*
+                <div className="modal-actions" style={{ flexDirection: 'column', gap: '10px' }}>
+                  <button 
+                    className="btn btn-primary" 
+                    style={{ width: '100%', background: '#25D366', borderColor: '#25D366' }}
+                    onClick={() => {
+                      const text = `*Notifikasi Booking Ruang Meeting*
 Halo Tim OB GA, ada booking baru:
 
 *Ruangan:* ${room.name}
@@ -225,11 +227,16 @@ Halo Tim OB GA, ada booking baru:
 *Judul:* ${lastBooking.title}
 
 Mohon persiapkan konsumsi (air mineral / makanan ringan). Terima kasih!`;
-                  window.open(`https://wa.me/6281393702858?text=${encodeURIComponent(text)}`, '_blank');
-                }}
-              >
-                <span style={{ marginRight: '8px' }}>📲</span> Kirim Notif ke OB
-              </button>
+                      window.open(`https://wa.me/6281393702858?text=${encodeURIComponent(text)}`, '_blank');
+                    }}
+                  >
+                    <span style={{ marginRight: '8px' }}>📲</span> Kirim Notif ke OB
+                  </button>
+                </div>
+              </>
+            )}
+
+            <div className="modal-actions" style={{ flexDirection: 'column', gap: '10px', marginTop: room.id === 'studio' ? '20px' : '0' }}>
               <button 
                 className="btn btn-outline" 
                 style={{ width: '100%' }}
