@@ -129,8 +129,11 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
           </div>
           <div className="upcoming-timeline">
             {allBookings.filter(b => {
-              const bDate = b.date;
-              return bDate >= todayStr && b.status !== 'cancelled';
+              const currentTime = getWIBTime();
+              if (b.status === 'cancelled') return false;
+              if (b.date > todayStr) return true;
+              if (b.date === todayStr) return b.startTime > currentTime;
+              return false;
             }).sort((a,b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)).slice(0, 5).map(b => {
               const room = getRoom(b.roomId);
               return (
