@@ -30,6 +30,8 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [lastBooking, setLastBooking] = useState<any>(null);
 
   useState(() => {
     getRoomById(roomId).then(setRoom);
@@ -85,8 +87,9 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
     setShowConfirm(false);
 
     if (result.success) {
+      setLastBooking(result.booking);
+      setIsSuccess(true);
       showToast('Booking berhasil dibuat!', 'success');
-      setTimeout(() => router.push('/my-bookings'), 1500);
     } else {
       showToast(result.error || 'Terjadi kesalahan', 'error');
     }
@@ -181,6 +184,58 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
               <button className="btn btn-outline btn-sm" onClick={() => setShowConfirm(false)} disabled={isSubmitting}>Batal</button>
               <button className="btn btn-primary btn-sm" style={{ background: room.color }} onClick={confirmBooking} disabled={isSubmitting}>
                 {isSubmitting ? 'Memproses...' : 'Konfirmasi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {isSuccess && lastBooking && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ textAlign: 'center', maxWidth: '400px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+            <h2>Booking Berhasil!</h2>
+            <p>Rapat <strong>{lastBooking.title}</strong> telah dijadwalkan.</p>
+            
+            <div style={{ 
+              background: '#f8f9fa', 
+              padding: '16px', 
+              borderRadius: '8px', 
+              marginBottom: '20px',
+              border: '1px dashed #ddd',
+              fontSize: '14px',
+              textAlign: 'left'
+            }}>
+              <p style={{ margin: '0 0 8px 0' }}><strong>Ingin pesan konsumsi?</strong></p>
+              <p style={{ margin: 0, color: '#666' }}>Kirim notifikasi otomatis ke Tim OB GA via WhatsApp.</p>
+            </div>
+
+            <div className="modal-actions" style={{ flexDirection: 'column', gap: '10px' }}>
+              <button 
+                className="btn btn-primary" 
+                style={{ width: '100%', background: '#25D366', borderColor: '#25D366' }}
+                onClick={() => {
+                  const text = `*Notifikasi Booking Ruang Meeting*
+Halo Tim OB GA, ada booking baru:
+
+*Ruangan:* ${room.name}
+*Tanggal:* ${formatIndonesianDate(lastBooking.date)}
+*Waktu:* ${lastBooking.startTime} - ${lastBooking.endTime}
+*Judul:* ${lastBooking.title}
+
+Mohon persiapkan konsumsi (air mineral / makanan ringan). Terima kasih!`;
+                  window.open(`https://wa.me/6281393702858?text=${encodeURIComponent(text)}`, '_blank');
+                }}
+              >
+                <span style={{ marginRight: '8px' }}>📲</span> Kirim Notif ke OB
+              </button>
+              <button 
+                className="btn btn-outline" 
+                style={{ width: '100%' }}
+                onClick={() => router.push('/my-bookings')}
+              >
+                Lihat Booking Saya
               </button>
             </div>
           </div>
