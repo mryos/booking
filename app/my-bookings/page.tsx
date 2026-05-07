@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { rooms } from '../lib/data';
 import { getBookings, cancelBooking, deleteBooking } from '../lib/actions';
-import { formatIndonesianDate } from '../lib/utils';
+import { formatIndonesianDate, getWIBDate, getWIBTime } from '../lib/utils';
 import Toast, { useToast } from '../components/Toast';
 import { CalendarDays, Clock, MapPin, X, Trash2, Plus } from 'lucide-react';
 
@@ -27,7 +27,21 @@ export default function MyBookingsPage() {
   const getRoomName = (roomId: string) => rooms.find((r) => r.id === roomId)?.shortName || roomId;
   const getRoomColor = (roomId: string) => rooms.find((r) => r.id === roomId)?.color || '#359ed9';
 
-  const filtered = activeTab === 'all' ? bookings : bookings.filter((b) => b.status === activeTab);
+  const today = getWIBDate();
+  const nowTime = getWIBTime();
+
+  const getLiveStatus = (b: any) => {
+    if (b.status === 'cancelled') return 'cancelled';
+    if (b.date < today) return 'completed';
+    if (b.date > today) return 'upcoming';
+    if (nowTime > b.endTime) return 'completed';
+    if (nowTime >= b.startTime && nowTime <= b.endTime) return 'in-progress';
+    return 'upcoming';
+  };
+
+  const filtered = activeTab === 'all' 
+    ? bookings 
+    : bookings.filter((b) => getLiveStatus(b) === activeTab);
 
   const handleCancel = async (id: string) => {
     const res = await cancelBooking(id);
@@ -99,7 +113,7 @@ export default function MyBookingsPage() {
             {tab.label}
             {tab.key !== 'all' && (
               <span style={{ marginLeft: 6, fontSize: '0.75rem', background: activeTab === tab.key ? 'var(--blue-bg)' : 'var(--gray-100)', padding: '2px 8px', borderRadius: 10 }}>
-                {bookings.filter((b) => b.status === tab.key).length}
+                {bookings.filter((b) => getLiveStatus(b) === tab.key).length}
               </span>
             )}
           </button>
@@ -130,7 +144,7 @@ export default function MyBookingsPage() {
                 </div>
               </div>
               <div className="booking-card-actions" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <span className={`schedule-status status-${b.status}`} style={{ margin: 0 }}>{statusLabel[b.status]}</span>
+                <span className={`schedule-status status-${getLiveStatus(b)}`} style={{ margin: 0 }}>{statusLabel[getLiveStatus(b)]}</span>
                 
                 {b.status !== 'cancelled' && (
                   <button className="btn btn-outline btn-sm" onClick={() => shareInvitation(b)} title="Bagikan ke WhatsApp" style={{ padding: '6px 10px' }}>
@@ -139,13 +153,13 @@ export default function MyBookingsPage() {
                     </svg>
                   </button>
                 )}
-
-                {b.status === 'upcoming' && (
+ 
+                {getLiveStatus(b) === 'upcoming' && (
                   <button className="btn btn-ghost btn-sm" style={{ color: '#e74c3c' }} onClick={() => setConfirmAction({ type: 'cancel', id: b.id })} title="Batalkan">
                     <X size={16} />
                   </button>
                 )}
-                {(b.status === 'cancelled' || b.status === 'completed') && (
+                {(getLiveStatus(b) === 'cancelled' || getLiveStatus(b) === 'completed') && (
                   <button className="btn btn-ghost btn-sm" style={{ color: '#e74c3c' }} onClick={() => setConfirmAction({ type: 'delete', id: b.id })} title="Hapus">
                     <Trash2 size={16} />
                   </button>
