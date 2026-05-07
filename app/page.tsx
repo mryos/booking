@@ -20,6 +20,8 @@ const facilityIcons: Record<string, React.ReactNode> = {
   Lighting: <span style={{ fontSize: '11px' }}>💡</span>,
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const rooms = await getRooms();
   const stats = await getTodayStats();

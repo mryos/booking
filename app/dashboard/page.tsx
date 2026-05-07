@@ -2,6 +2,8 @@ import { getTodayStats } from '../lib/actions';
 import DashboardClient from './DashboardClient';
 import { CalendarDays, Clock, Users, BarChart3 } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const stats = await getTodayStats();
 

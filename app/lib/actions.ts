@@ -215,7 +215,7 @@ export async function getTodayStats() {
 
     // Calculate activeNow and upcoming based on actual time
     const activeNowCount = todayBookings.filter(b => 
-      nowTime >= b.startTime && nowTime <= b.endTime
+      nowTime >= b.startTime && nowTime < b.endTime
     ).length;
 
     const upcomingCount = todayBookings.filter(b => 

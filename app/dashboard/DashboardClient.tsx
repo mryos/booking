@@ -30,13 +30,24 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
 
   useEffect(() => {
     fetchLatestData();
+    
+    // Refresh data every minute to keep "Status Sekarang" accurate
+    const interval = setInterval(() => {
+      // Just triggering a state update is enough to re-render with new getWIBTime()
+      fetchLatestData();
+    }, 60000);
+
     if (supabase) {
       const channel = supabase.channel('schema-db-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
           fetchLatestData();
         }).subscribe();
-      return () => { supabase.removeChannel(channel); };
+      return () => { 
+        supabase.removeChannel(channel);
+        clearInterval(interval);
+      };
     }
+    return () => clearInterval(interval);
   }, [fetchLatestData]);
 
   const getRoom = (roomId: string) => rooms.find((r) => r.id === roomId);
@@ -182,7 +193,7 @@ export default function DashboardClient({ initialStats }: { initialStats: any })
           <div className="room-status-list">
             {rooms.map(room => {
               const timeStr = getWIBTime();
-              const isBusy = allBookings.some(b => b.roomId === room.id && b.date === todayStr && timeStr >= b.startTime && timeStr <= b.endTime && b.status !== 'cancelled');
+              const isBusy = allBookings.some(b => b.roomId === room.id && b.date === todayStr && timeStr >= b.startTime && timeStr < b.endTime && b.status !== 'cancelled');
               return (
                 <div key={room.id} className="room-status-item">
                   <div className="room-color-dot" style={{ background: room.color }} />

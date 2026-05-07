@@ -103,8 +103,8 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
       <p className="subtitle">Isi detail rapat Anda di bawah ini</p>
 
       {room.id === 'studio' && (
-        <div className="stat-card" style={{ 
-          background: 'rgba(241, 144, 21, 0.1)', 
+        <div className="stat-card" style={{
+          background: 'rgba(241, 144, 21, 0.1)',
           border: '1px solid #f19015',
           marginBottom: '20px',
           display: 'flex',
@@ -197,13 +197,13 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
             <h2>Booking Berhasil!</h2>
             <p>Rapat <strong>{lastBooking.title}</strong> telah dijadwalkan.</p>
-            
+
             {room.id !== 'studio' && (
               <>
-                <div style={{ 
-                  background: '#f8f9fa', 
-                  padding: '16px', 
-                  borderRadius: '8px', 
+                <div style={{
+                  background: '#f8f9fa',
+                  padding: '16px',
+                  borderRadius: '8px',
                   marginBottom: '20px',
                   border: '1px dashed #ddd',
                   fontSize: '14px',
@@ -214,8 +214,8 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
                 </div>
 
                 <div className="modal-actions" style={{ flexDirection: 'column', gap: '10px' }}>
-                  <button 
-                    className="btn btn-primary" 
+                  <button
+                    className="btn btn-primary"
                     style={{ width: '100%', background: '#25D366', borderColor: '#25D366' }}
                     onClick={() => {
                       const text = `*Notifikasi Booking Ruang Meeting*
@@ -237,8 +237,8 @@ Mohon persiapkan konsumsi (air mineral / makanan ringan). Terima kasih!`;
             )}
 
             <div className="modal-actions" style={{ flexDirection: 'column', gap: '10px', marginTop: room.id === 'studio' ? '20px' : '0' }}>
-              <button 
-                className="btn btn-outline" 
+              <button
+                className="btn btn-outline"
                 style={{ width: '100%' }}
                 onClick={() => router.push('/my-bookings')}
               >
