@@ -19,7 +19,7 @@ const INITIAL_ROOMS = [
   { id: 'management-lt2', name: 'Ruang Meeting Management Lantai 2', shortName: 'Management Lt.2', floor: 'Lantai 2', description: 'Ruang meeting strategis di lantai 2 untuk koordinasi manajemen.', facilities: ['TV Screen', 'Whiteboard', 'AC', 'Wi-Fi'], color: '#359ed9' },
   { id: 'lobby-lt2', name: 'Ruang Lobby Management Lantai 2', shortName: 'Lobby Lt.2', floor: 'Lantai 2', description: 'Ruang lobby luas untuk pertemuan dengan jumlah peserta lebih banyak.', facilities: ['TV', 'Sound System', 'Whiteboard', 'AC', 'Wi-Fi'], color: '#f19015' },
   { id: 'ballroom-lt3', name: 'Ruang Ballroom Office Lantai 3', shortName: 'Ballroom Lt.3', floor: 'Lantai 3', description: 'Ruang ballroom besar untuk acara, presentasi, dan pertemuan skala besar.', facilities: ['Videotron', 'Sound System', 'Podium', 'Whiteboard', 'AC', 'Wi-Fi'], color: '#359ed9' },
-  { id: 'studio', name: 'Studio', shortName: 'Studio', floor: 'Lantai 3', description: 'Ruang studio multifungsi untuk recording, workshop, and kegiatan kreatif.', facilities: ['Alat Musik Lengkap', 'Recording', 'AC', 'Wi-Fi', 'Lighting'], color: '#f19015' },
+  { id: 'studio', name: 'Studio', shortName: 'Studio', floor: 'Lantai 4', description: 'Ruang studio multifungsi untuk recording, workshop, and kegiatan kreatif.', facilities: ['Alat Musik Lengkap', 'Recording', 'AC', 'Wi-Fi', 'Lighting'], color: '#f19015' },
 ];
 
 async function ensureDataFile() {
