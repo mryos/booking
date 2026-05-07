@@ -83,7 +83,7 @@ export async function isTimeSlotAvailable(
 }
 
 async function notifyOBTeam(booking: any, room: any) {
-  const OB_NUMBER = '6281393702858'; 
+  const OB_NUMBER = '6287716293560'; 
   const message = `*Notifikasi Booking Ruang Meeting*
 Halo Tim OB GA, ada booking baru:
 

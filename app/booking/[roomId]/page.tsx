@@ -227,7 +227,7 @@ Halo Tim OB GA, ada booking baru:
 *Judul:* ${lastBooking.title}
 
 Mohon persiapkan konsumsi (air mineral / makanan ringan). Terima kasih!`;
-                      window.open(`https://wa.me/6281393702858?text=${encodeURIComponent(text)}`, '_blank');
+                      window.open(`https://wa.me/6287716293560?text=${encodeURIComponent(text)}`, '_blank');
                     }}
                   >
                     <span style={{ marginRight: '8px' }}>📲</span> Kirim Notif ke OB
