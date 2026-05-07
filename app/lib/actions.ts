@@ -82,6 +82,40 @@ export async function isTimeSlotAvailable(
   }
 }
 
+async function notifyOBTeam(booking: any, room: any) {
+  const OB_NUMBER = process.env.OB_WHATSAPP_NUMBER || '6281234567890'; // Placeholder
+  const message = `*Notifikasi Booking Ruang Meeting*
+Halo Tim OB GA, ada booking baru:
+
+*Ruangan:* ${room.name}
+*Tanggal:* ${booking.date}
+*Waktu:* ${booking.startTime} - ${booking.endTime}
+*Judul:* ${booking.title}
+*Penyelenggara:* ${booking.organizer}
+
+Mohon persiapkan konsumsi (air mineral / makanan ringan). Terima kasih!`;
+
+  // Catatan: Di produksi, gunakan penyedia layanan WA Gateway (seperti Fonnte, Twilio, atau Wablas)
+  // Contoh implementasi dengan Fonnte:
+  /*
+  try {
+    await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: { 'Authorization': process.env.FONNTE_TOKEN || '' },
+      body: new URLSearchParams({
+        target: OB_NUMBER,
+        message: message,
+      })
+    });
+  } catch (err) {
+    console.error('WhatsApp Notification Error:', err);
+  }
+  */
+  
+  // Untuk keperluan demo/log:
+  console.log(`[WA NOTIF] Mengirim pesan ke ${OB_NUMBER}: \n${message}`);
+}
+
 export async function createBooking(data: {
   roomId: string;
   date: string;
@@ -111,6 +145,13 @@ export async function createBooking(data: {
       const bookings = await readBookings();
       bookings.push(newBooking);
       await writeBookings(bookings);
+    }
+
+    // Trigger WA Notification to OB Team
+    const room = await fetchRoom(data.roomId);
+    if (room) {
+      // Kita panggil tanpa await agar tidak menghambat response user (background task)
+      notifyOBTeam(newBooking, room);
     }
 
     revalidatePath('/');
