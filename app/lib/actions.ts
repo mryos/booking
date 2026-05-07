@@ -48,6 +48,19 @@ export async function isTimeSlotAvailable(
   endTime: string
 ) {
   try {
+    // Special restriction for Studio room
+    if (roomId === 'studio') {
+      const isLunchSlot = startTime >= '12:00' && endTime <= '13:00';
+      const isEveningSlot = startTime >= '16:00';
+      
+      if (!isLunchSlot && !isEveningSlot) {
+        return { 
+          available: false, 
+          message: 'Ruang Studio hanya dapat dipesan pada jam 12:00 - 13:00 atau mulai pukul 16:00.' 
+        };
+      }
+    }
+
     const bookings = await readBookings();
     const existingBookings = bookings.filter((b) => 
       b.roomId === roomId && 
@@ -55,11 +68,17 @@ export async function isTimeSlotAvailable(
       b.status !== 'cancelled'
     );
 
-    return !existingBookings.some((b) => {
+    const hasOverlap = existingBookings.some((b) => {
       return startTime < b.endTime && endTime > b.startTime;
     });
+
+    if (hasOverlap) {
+      return { available: false, message: 'Slot waktu ini sudah terpakai' };
+    }
+
+    return { available: true };
   } catch (error) {
-    return false;
+    return { available: false, message: 'Terjadi kesalahan saat memeriksa ketersediaan' };
   }
 }
 
@@ -73,9 +92,9 @@ export async function createBooking(data: {
   description?: string;
 }) {
   try {
-    const available = await isTimeSlotAvailable(data.roomId, data.date, data.startTime, data.endTime);
-    if (!available) {
-      throw new Error('Slot waktu tidak tersedia');
+    const check = await isTimeSlotAvailable(data.roomId, data.date, data.startTime, data.endTime);
+    if (!check.available) {
+      throw new Error(check.message || 'Slot waktu tidak tersedia');
     }
 
     const newBooking = {

@@ -7,7 +7,7 @@ import { getRoomById, createBooking, isTimeSlotAvailable } from '../../lib/actio
 import { timeSlots } from '../../lib/data';
 import { getWIBDate, formatIndonesianDate } from '../../lib/utils';
 import Toast, { useToast } from '../../components/Toast';
-import { ArrowLeft, CalendarDays, Clock, User, FileText } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Clock, User, FileText, Info } from 'lucide-react';
 
 // getWIBDate moved to utils.ts
 
@@ -53,9 +53,9 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
     if (form.date < todayStr) errs.date = 'Tidak bisa booking di masa lalu';
 
     if (Object.keys(errs).length === 0) {
-      const available = await isTimeSlotAvailable(room.id, form.date, form.startTime, form.endTime);
-      if (!available) {
-        errs.startTime = 'Slot waktu ini sudah terpakai';
+      const check = await isTimeSlotAvailable(room.id, form.date, form.startTime, form.endTime);
+      if (!check.available) {
+        errs.startTime = check.message || 'Slot waktu ini sudah terpakai';
       }
     }
 
@@ -98,6 +98,23 @@ export default function BookingPage({ params }: { params: Promise<{ roomId: stri
 
       <h1>Booking {room.name}</h1>
       <p className="subtitle">Isi detail rapat Anda di bawah ini</p>
+
+      {room.id === 'studio' && (
+        <div className="stat-card" style={{ 
+          background: 'rgba(241, 144, 21, 0.1)', 
+          border: '1px solid #f19015',
+          marginBottom: '20px',
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'center',
+          padding: '12px 16px'
+        }}>
+          <Info size={20} color="#f19015" />
+          <p style={{ fontSize: '14px', margin: 0, color: '#333' }}>
+            <strong>Pengaturan Khusus:</strong> Ruang Studio hanya dapat dipesan pada jam <strong>12:00 - 13:00</strong> atau <strong>mulai pukul 16:00</strong>.
+          </p>
+        </div>
+      )}
 
       <div className="form-card">
         <div className="form-group">
